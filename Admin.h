@@ -8,7 +8,6 @@ using namespace std;
  
 class Admin : public Employee {
 public:
-    // Admin names are limited to 3-20 characters (per the spec).
     bool setName(string n) override {
         if (!Validation::checkName(n, 3, 20))
             return false;
