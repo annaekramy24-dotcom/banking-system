@@ -2,8 +2,8 @@
 #pragma once
 #include <iostream>
 #include <string>
-#include "Employee"
-#include "Validation.cpp"
+#include "Employee.h"
+#include "Validation.h"
 using namespace std;
  
 class Admin : public Employee {
@@ -19,4 +19,12 @@ public:
         cout << "Admin Name: " << getName() << endl;
         cout << "Admin Salary: " << getSalary() << endl;
     }
+
+    void addEmployee(Employee& employee);
+    Employee* searchEmployee(int id);   
+    void editEmployee(int id, string name, string password, double salary);
+    void listEmployee();
+
+
+    
 };
