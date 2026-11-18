@@ -1,8 +1,9 @@
 #pragma once
 #include <iostream>
 #include <string>
-#include "person.cpp"
-#include "Validation.cpp"
+#include "Client.h"
+#include "person.h"
+#include "Validation.h"
 using namespace std;
 
 class Employee : public Person {
@@ -25,4 +26,9 @@ public:
         cout << "Employee Name: " << getName() << endl;
         cout << "Employee Salary: " << salary << endl;
     }
+void addClient(Client& client);
+    Client* searchClient(int id);   
+    void listClient();
+    void editClient(int id, string name, string password, double balance);
+
 };
