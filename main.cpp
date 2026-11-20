@@ -5,5 +5,5 @@
 using namespace std;
 
 int main() {
-
+//kont bagarb
 }
