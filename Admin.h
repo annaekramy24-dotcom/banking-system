@@ -26,5 +26,7 @@ public:
     void listEmployee();
 
 
-    
+       Client* searchClient(int id);
+    void listClient();
+    void editClient(int id, string name, string password, double balance); 
 };

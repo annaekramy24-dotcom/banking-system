@@ -9,7 +9,7 @@ public:
         if (name.length() < minLength || name.length() > maxLength)
             return false;
 
-        // No leading or trailing space
+       
         if (name.front() == ' ' || name.back() == ' ')
             return false;
 
@@ -19,7 +19,7 @@ public:
             if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))
                 hasLetter = true;
             else if (c == ' ') {
-                // No two spaces in a row
+              
                 if (i > 0 && name[i - 1] == ' ')
                     return false;
             }
