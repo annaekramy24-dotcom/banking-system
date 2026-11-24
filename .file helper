@@ -1,0 +1,595 @@
+
+#include <iostream>
+#include <string>
+#include <vector>
+#include <fstream>
+using namespace std;
+
+class Client;
+class Employee;
+class Admin;
+
+// ==========================================
+// 1. Validation
+// ==========================================
+class Validation {
+public:
+
+    static bool checkName(string name, int minLength = 3, int maxLength = 40) {
+        if (name.length() < minLength || name.length() > maxLength)
+            return false;
+
+        for (int i = 0; i < name.length(); i++) {
+            if (!((name[i] >= 'A' && name[i] <= 'Z') ||
+                  (name[i] >= 'a' && name[i] <= 'z') ||
+                  name[i] == ' '))
+                return false;
+        }
+
+        return true;
+    }
+
+    static bool checkPassword(string password) {
+        if (password.length() < 8 || password.length() > 20)
+            return false;
+
+        for (int i = 0; i < password.length(); i++) {
+            if (password[i] == ' ')
+                return false;
+        }
+
+        return true;
+    }
+
+    static bool checkBalance(double balance) {
+        return balance >= 1500;
+    }
+
+    static bool checkSalary(double salary) {
+        return salary >= 5000;
+    }
+};
+
+// ==========================================
+// 2. Client
+// ==========================================
+class Client {
+private:
+    int id = 0;
+    string name;
+    string password;
+    double balance = 1500;
+
+public:
+
+    void setId(int i) {
+        id = i;
+    }
+
+    bool setName(string n) {
+        if (Validation::checkName(n)) {
+            name = n;
+            return true;
+        }
+        return false;
+    }
+
+    bool setPassword(string p) {
+        if (Validation::checkPassword(p)) {
+            password = p;
+            return true;
+        }
+        return false;
+    }
+
+    bool setBalance(double b) {
+        if (Validation::checkBalance(b)) {
+            balance = b;
+            return true;
+        }
+        return false;
+    }
+
+    int getId() {
+        return id;
+    }
+
+    string getName() {
+        return name;
+    }
+
+    string getPassword() {
+        return password;
+    }
+
+    double getBalance() {
+        return balance;
+    }
+
+    void deposit(double amount) {
+        if (amount > 0) {
+            balance += amount;
+            cout << "Deposit successful" << endl;
+        }
+        else {
+            cout << "Invalid amount" << endl;
+        }
+    }
+
+    void withdraw(double amount) {
+        if (amount > 0 && balance - amount >= 1500) {
+            balance -= amount;
+            cout << "Withdraw successful" << endl;
+        }
+        else {
+            cout << "Insufficient balance" << endl;
+        }
+    }
+
+    void transferTo(double amount, Client& recipient) {
+        if (amount > 0 && amount <= balance &&
+            balance - amount >= 1500) {
+
+            balance -= amount;
+            recipient.deposit(amount);
+        }
+        else {
+            cout << "Insufficient balance or minimum balance limit reached" << endl;
+        }
+    }
+
+    void checkBalance() {
+        cout << "Current Balance: " << balance << endl;
+    }
+
+    void display() {
+        cout << "Client ID: " << id << endl;
+        cout << "Client Name: " << name << endl;
+        cout << "Balance: " << balance << endl;
+    }
+};
+
+// ==========================================
+// 3. Employee
+// ==========================================
+class Employee {
+private:
+    int id = 0;
+    string name;
+    string password;
+    double salary = 5000;
+
+public:
+
+    void setId(int i) {
+        id = i;
+    }
+
+    bool setName(string n) {
+        if (Validation::checkName(n)) {
+            name = n;
+            return true;
+        }
+        return false;
+    }
+
+    bool setPassword(string p) {
+        if (Validation::checkPassword(p)) {
+            password = p;
+            return true;
+        }
+        return false;
+    }
+
+    bool setSalary(double s) {
+        if (Validation::checkSalary(s)) {
+            salary = s;
+            return true;
+        }
+        return false;
+    }
+
+    int getId() {
+        return id;
+    }
+
+    string getName() {
+        return name;
+    }
+
+    string getPassword() {
+        return password;
+    }
+
+    double getSalary() {
+        return salary;
+    }
+
+    void display() {
+        cout << "Employee ID: " << id << endl;
+        cout << "Employee Name: " << name << endl;
+        cout << "Employee Salary: " << salary << endl;
+    }
+};
+
+// ==========================================
+// 4. Admin
+// ==========================================
+class Admin : public Employee {
+public:
+
+    bool setName(string n) {
+        if (Validation::checkName(n)) {
+            Employee::setName(n);
+            return true;
+        }
+        return false;
+    }
+
+    void display() {
+        cout << "Admin ID: " << getId() << endl;
+        cout << "Admin Name: " << getName() << endl;
+        cout << "Admin Salary: " << getSalary() << endl;
+    }
+};
+
+// ==========================================
+// 5. DataSourceInterface
+// ==========================================
+class DataSourceInterface {
+public:
+
+    virtual ~DataSourceInterface() = default;
+
+    virtual void addClient(Client obj) = 0;
+    virtual void addEmployee(Employee obj) = 0;
+    virtual void addAdmin(Admin obj) = 0;
+
+    virtual vector<Client> getAllClients() = 0;
+    virtual vector<Employee> getAllEmployees() = 0;
+    virtual vector<Admin> getAllAdmins() = 0;
+
+    virtual void removeAllClients() = 0;
+    virtual void removeAllEmployees() = 0;
+    virtual void removeAllAdmins() = 0;
+};
+
+// ==========================================
+// 6. Parser
+// ==========================================
+class Parser {
+public:
+
+    // بتاخد سطر كامل من الملف وتقسمه لأجزاء عند علامة |
+    // مثال: "1|Habiba|12345678|5000"
+    // النتيجة: ["1", "Habiba", "12345678", "5000"]
+
+    static vector<string> split(string line) {
+
+        vector<string> result; // هنا هنخزن كل جزء بعد تقسيم السطر
+        string word = "";      // هنا بنجمع الحروف لحد ما نوصل لـ |
+
+        for (int i = 0; i < line.length(); i++) {
+
+            if (line[i] == '|') {
+                // وصلنا للفاصل، فنضيف الكلمة اللي جمعناها للـ vector
+                result.push_back(word);
+
+                // نفرّغ word عشان نبدأ نجمع الجزء اللي بعده
+                word = "";
+            }
+            else {
+                // لو الحرف مش | نضيفه للكلمة الحالية
+                word += line[i];
+            }
+        }
+
+        // نضيف آخر جزء لأن السطر غالباً مش بينتهي بعلامة |
+        result.push_back(word);
+
+        // نرجّع كل الأجزاء بعد التقسيم
+        return result;
+    }
+
+    // تحويل السطر إلى Client Object
+    static Client parseToClient(string line) {
+
+        // نقسم السطر لأجزاء ونحطها في vector اسمه data
+        vector<string> data = split(line);
+
+        // ننشئ Client جديد
+        Client c;
+
+        // نحط كل جزء في المكان المناسب داخل الـ Client
+        // stoi بتحوّل string إلى int
+        c.setId(stoi(data[0]));
+
+        // الاسم موجود في الجزء رقم 1
+        c.setName(data[1]);
+
+        // الباسورد موجود في الجزء رقم 2
+        c.setPassword(data[2]);
+
+        // stod بتحوّل string إلى double
+        c.setBalance(stod(data[3]));
+
+        // نرجّع الـ Client بعد ما مليناه بالبيانات
+        return c;
+    }
+
+    // تحويل السطر إلى Employee Object
+    static Employee parseToEmployee(string line) {
+
+        // نقسم السطر لأجزاء
+        vector<string> data = split(line);
+
+        // ننشئ Employee جديد
+        Employee e;
+
+        // نوزّع البيانات على خصائص الـ Employee
+        e.setId(stoi(data[0]));
+        e.setName(data[1]);
+        e.setPassword(data[2]);
+        e.setSalary(stod(data[3]));
+
+        // نرجّع الـ Employee بعد ملء بياناته
+        return e;
+    }
+
+    // تحويل السطر إلى Admin Object
+    static Admin parseToAdmin(string line) {
+
+        // نقسم السطر لأجزاء
+        vector<string> data = split(line);
+
+        // ننشئ Admin جديد
+        Admin a;
+
+        // نوزّع البيانات على خصائص الـ Admin
+        a.setId(stoi(data[0]));
+        a.setName(data[1]);
+        a.setPassword(data[2]);
+        a.setSalary(stod(data[3]));
+
+        // نرجّع الـ Admin بعد ملء بياناته
+        return a;
+    }
+};
+
+// ==========================================
+// 7. FilesHelper
+// ==========================================
+class FilesHelper {
+private:
+
+    // Vectors مؤقتة في الذاكرة لتخزين الـ Objects بعد قراءتها من الملفات
+    static vector<Client> clients;
+    static vector<Employee> employees;
+    static vector<Admin> admins;
+
+public:
+
+    // Save Last ID
+    static void saveLast(string fileName, int id) {
+
+        // ofstream بنستخدمه للكتابة داخل ملف
+        // لو الملف مش موجود، بيتعمل تلقائياً
+        ofstream file(fileName);
+
+        if (file.is_open()) {
+            // نكتب آخر ID داخل الملف
+            file << id;
+
+            // نقفل الملف بعد الانتهاء من الكتابة
+            file.close();
+        }
+    }
+
+    // Get Last ID
+    static int getLast(string fileName) {
+
+        // ifstream بنستخدمه لقراءة البيانات من ملف
+        ifstream file(fileName);
+
+        // القيمة الافتراضية لو الملف مش موجود أو مفيهوش ID
+        int id = 0;
+
+        if (file.is_open()) {
+            // نقرأ الـ ID من الملف ونخزنه في المتغير id
+            file >> id;
+
+            file.close();
+        }
+
+        // نرجّع آخر ID تم حفظه
+        return id;
+    }
+
+    // Save Client
+    static void saveClient(Client c) {
+
+        // نفتح ملف العملاء للكتابة
+        // ios::app معناها نضيف البيانات في آخر الملف
+        // من غير ما نمسح البيانات القديمة
+        ofstream file("Clients.txt", ios::app);
+
+        if (file.is_open()) {
+            // نحفظ بيانات العميل في سطر واحد
+            // بنستخدم | للفصل بين كل معلومة والتانية
+            file << c.getId() << "|"
+                 << c.getName() << "|"
+                 << c.getPassword() << "|"
+                 << c.getBalance() << endl;
+
+            file.close();
+
+            // نحفظ آخر ID للعميل في ملف منفصل
+            saveLast("LastClientId.txt", c.getId());
+        }
+    }
+
+    // Save Employee
+    static void saveEmployee(string fileName, string lastIdFile, Employee e) {
+
+        // نفتح الملف المحدد في fileName
+        // ios::app عشان نضيف Employee جديد من غير مسح القديم
+        ofstream file(fileName, ios::app);
+
+        if (file.is_open()) {
+            // نحفظ بيانات الموظف بنفس ترتيب بيانات الـ Parser
+            file << e.getId() << "|"
+                 << e.getName() << "|"
+                 << e.getPassword() << "|"
+                 << e.getSalary() << endl;
+
+            file.close();
+
+            // نحفظ آخر ID في ملف الـ IDs المحدد
+            saveLast(lastIdFile, e.getId());
+        }
+    }
+
+    // Save Admin
+    static void saveAdmin(string fileName, string lastIdFile, Admin a) {
+
+        // نفتح ملف الـ Admin ونضيف البيانات في آخره
+        ofstream file(fileName, ios::app);
+
+        if (file.is_open()) {
+            // نحفظ بيانات الـ Admin في سطر واحد
+            file << a.getId() << "|"
+                 << a.getName() << "|"
+                 << a.getPassword() << "|"
+                 << a.getSalary() << endl;
+
+            file.close();
+
+            // نحفظ آخر ID في ملف منفصل
+            saveLast(lastIdFile, a.getId());
+        }
+    }
+
+    // Fetch Clients
+    static void fetchClients() {
+
+        // نمسح البيانات القديمة من الـ vector
+        // عشان منضيفش نفس العملاء مرتين لو استدعينا الدالة أكتر من مرة
+        clients.clear();
+
+        // نفتح ملف العملاء للقراءة
+        ifstream file("Clients.txt");
+        string line;
+
+        if (file.is_open()) {
+            // getline بتقرأ الملف سطر بسطر
+            // كل مرة بتحط السطر الحالي في المتغير line
+            while (getline(file, line)) {
+
+                // نتأكد إن السطر مش فاضي
+                if (line != "") {
+                    // نحول السطر من نص إلى Client Object باستخدام Parser
+                    // push_back بتضيف الـ Object داخل vector العملاء
+                    clients.push_back(Parser::parseToClient(line));
+                }
+            }
+
+            // نقفل الملف بعد ما نخلص قراءة كل السطور
+            file.close();
+        }
+    }
+
+    // Fetch Employees
+    static void fetchEmployees() {
+
+        // نفرّغ vector الموظفين قبل ما نقرأ البيانات من جديد
+        employees.clear();
+
+        // نفتح ملف الموظفين للقراءة
+        ifstream file("Employee.txt");
+        string line;
+
+        if (file.is_open()) {
+            // نقرأ كل سطر في الملف
+            while (getline(file, line)) {
+
+                if (line != "") {
+                    // نحول السطر إلى Employee ونضيفه في vector
+                    employees.push_back(Parser::parseToEmployee(line));
+                }
+            }
+
+            file.close();
+        }
+    }
+
+    // Fetch Admins
+    static void fetchAdmins() {
+
+        // نفرّغ vector الـ Admins القديم
+        admins.clear();
+
+        // نفتح ملف الـ Admins للقراءة
+        ifstream file("Admin.txt");
+        string line;
+
+        if (file.is_open()) {
+            // نقرأ الملف سطر بسطر
+            while (getline(file, line)) {
+
+                if (line != "") {
+                    // نحول كل سطر إلى Admin Object ونخزنه في vector
+                    admins.push_back(Parser::parseToAdmin(line));
+                }
+            }
+
+            file.close();
+        }
+    }
+
+    // Clear File
+    static void clearFile(string fileName, string lastIdFile) {
+
+        // ios::trunc معناها نمسح محتويات الملف القديمة
+        // ونبدأ بملف فاضي
+        ofstream file(fileName, ios::trunc);
+
+        if (file.is_open()) {
+            file.close();
+        }
+
+        // بعد مسح البيانات نرجّع آخر ID إلى صفر
+        saveLast(lastIdFile, 0);
+    }
+
+    // Get Clients
+    static vector<Client> getClients() {
+
+        // نرجّع نسخة من vector العملاء اللي اتحملوا من الملف
+        return clients;
+    }
+
+    // Get Employees
+    static vector<Employee> getEmployees() {
+
+        // نرجّع نسخة من vector الموظفين
+        return employees;
+    }
+
+    // Get Admins
+    static vector<Admin> getAdmins() {
+
+        // نرجّع نسخة من vector الـ Admins
+        return admins;
+    }
+};
+
+// تعريف الـ static vectors خارج الكلاس
+// لأن الـ static variable لازم يكون له تعريف فعلي خارج الكلاس
+vector<Client> FilesHelper::clients;
+vector<Employee> FilesHelper::employees;
+vector<Admin> FilesHelper::admins;
+
+// ==========================================
+// 8. Main
+// ==========================================
+int main() {}
